@@ -3,8 +3,8 @@ use timekeeper;
 create table timesheet (
     id int not null auto_increment,
     date varchar(10),
-    start decimal(4,2),
-    end decimal(4,2),
+    start decimal(4, 2),
+    end decimal(4, 2),
     project varchar(8),
     primary key (id)
 );
