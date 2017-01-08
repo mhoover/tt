@@ -1,0 +1,4 @@
+[database]
+host: localhost
+db: timekeeper
+table: timesheet
