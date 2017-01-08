@@ -20,6 +20,19 @@ def run(args_dict):
         '''.format(table=args_dict['table'], time=args_dict['time']))
         db.cursor().execute(sql)
     else:
+        cur = db.cursor()
+        sql = ('''
+            select * from {table} where id=(select max(id) from {table});
+        '''.format(table=args_dict['table']))
+        cur.execute(sql)
+        end_val = cur.fetchall()
+        cur.close()
+        if not end_val[0][3]:
+            sys.exit('You\'re trying to make a new entry without closing out an '
+                     'open entry. Please close this entry first:\n\n'
+                     'Project: {}, Date: {}, Start: {}'.format(end_val[0][4],
+                                                               end_val[0][1],
+                                                               float(end_val[0][2])))
         if args_dict['date'] and args_dict['project']:
             db.cursor().execute('insert into {0} (date, start, project) '
                                 'values (%s, %s, %s);'.format(args_dict['table']),
