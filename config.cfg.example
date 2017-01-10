@@ -2,3 +2,4 @@
 host: localhost
 db: timekeeper
 table: timesheet
+gnuplot: /usr/local/bin/gnuplot

@@ -12,5 +12,6 @@ def update_args(args):
     for field in ['host', 'db', 'table']:
         if not args[field]:
             args[field] = cfg.get('database', field)
+    args['gnuplot'] = cfg.get('database', 'gnuplot')
 
     return args
