@@ -11,6 +11,31 @@ from datetime import datetime
 from tt import *
 
 
+def write_plot(d, nbr):
+    for i in xrange(1, nbr):
+        if i==1:
+            gnu = 'plot "-" u 1:2 t "{}" w lp'.format(d.columns[i])
+        else:
+            gnu += ', "-" u 1:2 t "{}" w lp'.format(d.columns[i])
+    gnu += '\n'
+    return gnu
+
+
+def make_graph(d):
+    plot_statement = write_plot(d, d.shape[1])
+
+    gp = subprocess.Popen(args_dict['gnuplot'], stdin=subprocess.PIPE)
+    gp.stdin.write('set terminal dumb 90 30\n')
+    gp.stdin.write('set xdata time\n')
+    gp.stdin.write('set timefmt "%m/%d/%Y"\n')
+    gp.stdin.write(plot_statement)
+    for col in xrange(1, d.shape[1]):
+        for row in xrange(d.shape[0]):
+            gp.stdin.write('{} {}\n'.format(d.ix[row, 0], d.ix[row, col]))
+        gp.stdin.write('e\n')
+    gp.stdin.flush()
+
+
 def run(args_dict):
     args_dict = update_args(args_dict)
 
@@ -28,18 +53,20 @@ def run(args_dict):
     df = df[(df.date>=args_dict['date'][0]) & (df.date<=args_dict['date'][1])]
 
     vals = df.groupby(['date', 'project']).apply(lambda x: (x['end'] - x['start']).sum())
+    graph = (vals
+             .reset_index()
+             .pivot(index='date', columns='project', values=0)
+             .reset_index(level=0)
+             .fillna(0))
+    graph.date = graph.date.apply(lambda x: datetime.strftime(x, '%m/%d/%Y'))
 
-    if args_dict['analysis']=='table' or args_dict['analysis']=='all':
+    if args_dict['analysis']=='table':
         print vals
-    elif args_dict['analysis']=='graph' or args_dict['analysis']=='all':
-        gp = subprocess.Popen(args_dict['gnuplot'], stdin=subprocess.PIPE)
-        gp.stdin.write('set terminal dumb 100 30\n')
-        gp.stdin.write('set xdata time\n')
-        gp.stdin.write('set timefmt "%m/%d/%Y"\n')
-        gp.stdin.write('plot "-" using 1:2 title "proj1" with linespoints\n')
-        for i, in zip(dd, vals3[0].proj1.tolist()): gp.stdin.write('{} {}\n'.format(i,j))
-        gp.stdin.write('e\n')
-        gp.stdin.flush()
+    elif args_dict['analysis']=='graph':
+        make_graph(graph)
+    else:
+        print vals
+        make_graph(graph)
 
 
 if __name__ == '__main__':
@@ -59,5 +86,3 @@ if __name__ == '__main__':
     args_dict = vars(parser.parse_args())
 
     run(args_dict)
-
-
