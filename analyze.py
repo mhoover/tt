@@ -2,6 +2,7 @@ import argparse
 import subprocess
 import sys
 
+import numpy as np
 import pandas as pd
 import pandas.io.sql as pdsql
 import pymysql as mdb
@@ -51,8 +52,10 @@ def run(args_dict):
     df.date = df.date.apply(lambda x: datetime.strptime(x, '%m/%d/%Y'))
 
     df = df[(df.date>=args_dict['date'][0]) & (df.date<=args_dict['date'][1])]
-
+    df.start.apply(lambda x: x/np.timedelta64(1, 'm'))
+    df.end.apply(lambda x: x/np.timedelta64(1, 'm'))
     vals = df.groupby(['date', 'project']).apply(lambda x: (x['end'] - x['start']).sum())
+
     graph = (vals
              .reset_index()
              .pivot(index='date', columns='project', values=0)

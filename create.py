@@ -19,12 +19,12 @@ def run(args_dict):
         create table {table} (
             id int not null auto_increment,
             date varchar(10),
-            start decimal(4, 2),
-            end decimal(4, 2),
+            start time(0),
+            end time(0),
             project varchar(8),
             primary key (id)
         );
-        insert into {table} (date, start, end, project) values ('01/01/2016', 0, 1, 'test');
+        insert into {table} (date, start, end, project) values ('01/01/2016', '0:00', '1:00', 'test');
     '''.format(db=args_dict['db'], table=args_dict['table']))
     db.cursor().execute('create database if not exists {}'.format(args_dict['db']))
     db.cursor().execute(sql)
