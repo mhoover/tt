@@ -9,7 +9,7 @@ def update_args(args):
     cfg = ConfigParser.ConfigParser()
     cfg.read('config.cfg')
 
-    for field in ['host', 'db', 'table']:
+    for field in ['host', 'db', 'table', 'dbengine']:
         if not args[field]:
             args[field] = cfg.get('database', field)
     args['gnuplot'] = cfg.get('database', 'gnuplot')
