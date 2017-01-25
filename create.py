@@ -34,9 +34,9 @@ def run(args_dict):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Add entry to timesheet')
-    parser.add_argument('-d', '--db', required=True, help='Name of the database '
+    parser.add_argument('-d', '--db', required=False, help='Name of the database '
                         'to create.')
-    parser.add_argument('-t', '--table', required=True, help='Name of the table to '
+    parser.add_argument('-t', '--table', required=False, help='Name of the table to '
                         'create.')
     parser.add_argument('--host', required=False, help='Database host; will default to '
                         'config settings.')
