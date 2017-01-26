@@ -3,48 +3,61 @@ import sys
 import warnings
 
 import pymysql as mdb
-import psycopg2
+import sqlite3
 
 from tt import *
 
 warnings.filterwarnings('ignore')
 
 
+def create_table_command_mysql():
+    sql_commands = [('''
+    use {db};'.format(args_dict['db']);
+    create table if not exists {table} (
+        id int not null auto_increment,
+        date varchar(10),
+        start time(0),
+        end time(0),
+        project varchar(8),
+        primary key (id)
+    );
+    ;
+    '''.format(db=args_dict['db'], table=args_dict['table']))]
+
+    sql_commands += ['create database if not exists {}'.format(args_dict['db'])]
+    return sql_commands
+
+def create_table_command_sqllite():
+    sql_commands = [('''
+    create table if not exists {table} (
+        id int auto increment,
+        date varchar(10),
+        start time(0),
+        end time(0),
+        project varchar(8),
+        primary key (id)
+    );
+    '''.format(table=args_dict['table']))]
+
+    return sql_commands
+
 def run(args_dict):
     args_dict = update_args(args_dict)
-    print args_dict
 
     if args_dict['dbengine'] == 'mysql':
         db = mdb.connect(host='{}'.format(args_dict['host']),
                          user='{}'.format(USERNAME),
                          password='{}'.format(PASSWORD),
                          autocommit=True)
-    elif args_dict['dbengine'] == 'postgres':
-        db = psycopg2.connect(host='{}'.format(args_dict['host']),
-                              user='{}'.format(USERNAME),
-                              password='{}'.format(PASSWORD))
+        sql_commands = create_table_command_mysql()
+    elif args_dict['dbengine'] == 'sqlite':
+        db = sqlite3.connect('{}.db'.format(args_dict['db']))
+        sql_commands = create_table_command_sqllite()
     else:
         raise ValueError, 'dbengine: {} not known'.format(args_dict['dbengine'])
 
-    sql = ('''
-        use {db};
-        create table {table} (
-            id int not null auto_increment,
-            date varchar(10),
-            start time(0),
-            end time(0),
-            project varchar(8),
-            primary key (id)
-        );
-        insert into {table} (date, start, end, project) values ('01/01/2016', '0:00', '1:00', 'test');
-    '''.format(db=args_dict['db'], table=args_dict['table']))
-    print 'sql', sql
-    if args_dict['dbengine'] == 'mysql':
-        db.cursor().execute('create database if not exists {}'.format(args_dict['db']))
-    elif args_dict['dbengine'] == 'postgres':
-        pass
-        #db.cursor().execute('create database {}'.format(args_dict['db']))
-    db.cursor().execute(sql)
+    for sql in sql_commands:
+        db.cursor().execute(sql)
     db.cursor().close()
     db.close()
 
