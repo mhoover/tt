@@ -2,10 +2,10 @@ import argparse
 import subprocess
 import sys
 
-import numpy as np
 import pandas as pd
 import pandas.io.sql as pdsql
 import pymysql as mdb
+import sqlite3
 
 from datetime import datetime
 
@@ -44,18 +44,19 @@ def run(args_dict):
         args_dict['date'].append(args_dict['date'][0])
     args_dict['date'] = [datetime.strptime(x, '%m/%d/%Y') for x in args_dict['date']]
 
-    db = mdb.connect(user='{}'.format(USERNAME), host=args_dict['host'],
-                     password='{}'.format(PASSWORD), db=args_dict['db'], charset='utf8')
+    if args_dict['dbengine'] == 'mysql':
+        db = mdb.connect(user='{}'.format(USERNAME), host=args_dict['host'],
+                         password='{}'.format(PASSWORD), db=args_dict['db'], charset='utf8')
+    elif args_dict['dbengine'] == 'sqlite':
+        db = sqlite3.connect('{}.db'.format(args_dict['db']), isolation_level=None)
 
     df = pdsql.read_sql('select * from {table}'.format(table=args_dict['table']), db)
 
     df.date = df.date.apply(lambda x: datetime.strptime(x, '%m/%d/%Y'))
 
     df = df[(df.date>=args_dict['date'][0]) & (df.date<=args_dict['date'][1])]
-    df.start.apply(lambda x: x/np.timedelta64(1, 'm'))
-    df.end.apply(lambda x: x/np.timedelta64(1, 'm'))
-    vals = df.groupby(['date', 'project']).apply(lambda x: (x['end'] - x['start']).sum())
 
+    vals = df.groupby(['date', 'project']).apply(lambda x: (x['end'] - x['start']).sum())
     graph = (vals
              .reset_index()
              .pivot(index='date', columns='project', values=0)

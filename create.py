@@ -30,12 +30,11 @@ def create_table_command_mysql():
 def create_table_command_sqllite():
     sql_commands = [('''
     create table if not exists {table} (
-        id int auto increment,
+        id integer primary key autoincrement,
         date varchar(10),
         start time(0),
         end time(0),
-        project varchar(8),
-        primary key (id)
+        project varchar(8)
     );
     '''.format(table=args_dict['table']))]
 
@@ -51,10 +50,15 @@ def run(args_dict):
                          autocommit=True)
         sql_commands = create_table_command_mysql()
     elif args_dict['dbengine'] == 'sqlite':
-        db = sqlite3.connect('{}.db'.format(args_dict['db']))
+        db = sqlite3.connect('{}.db'.format(args_dict['db']), isolation_level=None)
         sql_commands = create_table_command_sqllite()
     else:
         raise ValueError, 'dbengine: {} not known'.format(args_dict['dbengine'])
+
+    sql_commands.append(('''insert into {table} '''
+                         '''(date, start, end, project) '''
+                         '''values ('01/01/2016', 0, 1, 'test');'''
+                         ''''''.format(table=args_dict['table'])))
 
     for sql in sql_commands:
         db.cursor().execute(sql)
@@ -64,9 +68,9 @@ def run(args_dict):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Add entry to timesheet')
-    parser.add_argument('-d', '--db', required=True, help='Name of the database '
+    parser.add_argument('-d', '--db', required=False, help='Name of the database '
                         'to create.')
-    parser.add_argument('-t', '--table', required=True, help='Name of the table to '
+    parser.add_argument('-t', '--table', required=False, help='Name of the table to '
                         'create.')
     parser.add_argument('--host', required=False, help='Database host; will default to '
                         'config settings.')

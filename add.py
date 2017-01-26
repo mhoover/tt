@@ -2,6 +2,7 @@ import argparse
 import sys
 
 import pymysql as mdb
+import sqlite3
 
 from tt import *
 
@@ -9,13 +10,16 @@ from tt import *
 def run(args_dict):
     args_dict = update_args(args_dict)
 
-    db = mdb.connect(user='{}'.format(USERNAME), host=args_dict['host'],
-                     password='{}'.format(PASSWORD), db=args_dict['db'],
-                     charset='utf8', autocommit=True)
+    if args_dict['dbengine'] == 'mysql':
+        db = mdb.connect(user='{}'.format(USERNAME), host=args_dict['host'],
+                         password='{}'.format(PASSWORD), db=args_dict['db'],
+                         charset='utf8', autocommit=True)
+    elif args_dict['dbengine'] == 'sqlite':
+        db = sqlite3.connect('{}.db'.format(args_dict['db']), isolation_level=None)
+
     if args_dict['close_entry']:
         sql = ('''
-            select @last_row := max(id) from {table};
-            update {table} set end='{time}' where id=@last_row;
+            update {table} set end={time} where id=(select max(id) from {table});
         '''.format(table=args_dict['table'], time=args_dict['time']))
         db.cursor().execute(sql)
     else:
