@@ -19,7 +19,7 @@ def run(args_dict):
 
     if args_dict['close_entry']:
         sql = ('''
-            update {table} set end={time} where id=(select max(id) from {table});
+            update {table} set end="{time}" where id=(select max(id) from {table});
         '''.format(table=args_dict['table'], time=args_dict['time']))
         db.cursor().execute(sql)
     else:
