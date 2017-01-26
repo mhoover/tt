@@ -5,6 +5,7 @@ import sys
 import pandas as pd
 import pandas.io.sql as pdsql
 import pymysql as mdb
+import sqlite3
 
 from datetime import datetime
 
@@ -43,8 +44,11 @@ def run(args_dict):
         args_dict['date'].append(args_dict['date'][0])
     args_dict['date'] = [datetime.strptime(x, '%m/%d/%Y') for x in args_dict['date']]
 
-    db = mdb.connect(user='{}'.format(USERNAME), host=args_dict['host'],
-                     password='{}'.format(PASSWORD), db=args_dict['db'], charset='utf8')
+    if args_dict['dbengine'] == 'mysql':
+        db = mdb.connect(user='{}'.format(USERNAME), host=args_dict['host'],
+                         password='{}'.format(PASSWORD), db=args_dict['db'], charset='utf8')
+    elif args_dict['dbengine'] == 'sqlite':
+        db = sqlite3.connect('{}.db'.format(args_dict['db']), isolation_level=None)
 
     df = pdsql.read_sql('select * from {table}'.format(table=args_dict['table']), db)
 

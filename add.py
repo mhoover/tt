@@ -2,6 +2,7 @@ import argparse
 import sys
 
 import pymysql as mdb
+import sqlite3
 
 from tt import *
 
@@ -9,14 +10,16 @@ from tt import *
 def run(args_dict):
     args_dict = update_args(args_dict)
 
-    db = mdb.connect(user='{}'.format(USERNAME), host=args_dict['host'],
-                     password='{}'.format(PASSWORD), db=args_dict['db'],
-                     charset='utf8', autocommit=True)
+    if args_dict['dbengine'] == 'mysql':
+        db = mdb.connect(user='{}'.format(USERNAME), host=args_dict['host'],
+                         password='{}'.format(PASSWORD), db=args_dict['db'],
+                         charset='utf8', autocommit=True)
+    elif args_dict['dbengine'] == 'sqlite':
+        db = sqlite3.connect('{}.db'.format(args_dict['db']), isolation_level=None)
 
     if args_dict['close_entry']:
         sql = ('''
-            select @last_row := max(id) from {table};
-            update {table} set end={time} where id=@last_row;
+            update {table} set end={time} where id=(select max(id) from {table});
         '''.format(table=args_dict['table'], time=args_dict['time']))
         db.cursor().execute(sql)
     else:
@@ -34,10 +37,12 @@ def run(args_dict):
                                                                end_val[0][1],
                                                                float(end_val[0][2])))
         if args_dict['date'] and args_dict['project']:
-            db.cursor().execute('insert into {0} (date, start, project) '
-                                'values (%s, %s, %s);'.format(args_dict['table']),
-                                (args_dict['date'], args_dict['time'],
-                                 args_dict['project']))
+            s = ('insert into {} (date, start, project) '
+                 'values (\'{}\', {}, \'{}\');'.format(
+                args_dict['table'], args_dict['date'],
+                args_dict['time'],args_dict['project']))
+            print s
+            db.cursor().execute(s)
         else:
             sys.exit('You\'re trying to start a new entry; you must include a date '
                      'and a project.')
