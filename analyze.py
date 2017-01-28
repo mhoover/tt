@@ -50,14 +50,15 @@ def run(args_dict):
                          password='{}'.format(PASSWORD), db=args_dict['db'], charset='utf8')
     elif args_dict['dbengine'] == 'sqlite':
         db = sqlite3.connect('{}.db'.format(args_dict['db']), isolation_level=None)
+    else:
+        sys.exit(DB_ERROR_MESSAGE)
 
     df = pdsql.read_sql('select * from {table}'.format(table=args_dict['table']), db)
 
     df.date = df.date.apply(lambda x: datetime.strptime(x, '%m/%d/%Y'))
 
     df = df[(df.date>=args_dict['date'][0]) & (df.date<=args_dict['date'][1])]
-    df.start.apply(lambda x: x/np.timedelta64(1, 'm'))
-    df.end.apply(lambda x: x/np.timedelta64(1, 'm'))
+
     vals = df.groupby(['date', 'project']).apply(lambda x: (x['end'] - x['start']).sum())
     graph = (vals
              .reset_index()

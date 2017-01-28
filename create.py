@@ -74,8 +74,9 @@ if __name__ == '__main__':
                         'create.')
     parser.add_argument('--host', required=False, help='Database host; will default to '
                         'config settings.')
-    parser.add_argument('--dbengine', required=False, help='Database engine; will default to '
-                        'config settings. Currently, mysql and postgres are supported')
+    parser.add_argument('-e', '--dbengine', required=False, choices=['mysql', 'sqlite'],
+                        help='Database engine; will default to '
+                        'config settings.')
     args_dict = vars(parser.parse_args())
 
     run(args_dict)

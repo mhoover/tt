@@ -16,6 +16,8 @@ def run(args_dict):
                          charset='utf8', autocommit=True)
     elif args_dict['dbengine'] == 'sqlite':
         db = sqlite3.connect('{}.db'.format(args_dict['db']), isolation_level=None)
+    else:
+        sys.exit(DB_ERROR_MESSAGE)
 
     if args_dict['close_entry']:
         sql = ('''
