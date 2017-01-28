@@ -1,4 +1,5 @@
 import argparse
+import sqlite3
 import subprocess
 import sys
 
@@ -6,7 +7,6 @@ import numpy as np
 import pandas as pd
 import pandas.io.sql as pdsql
 import pymysql as mdb
-import sqlite3
 
 from datetime import datetime
 
@@ -38,8 +38,14 @@ def make_graph(d):
     gp.stdin.flush()
 
 
+def round_time(df, rd):
+    return [round(x/np.timedelta64(1, 'h') * rd) / rd for x in df[0]]
+
+
 def run(args_dict):
     args_dict = update_args(args_dict)
+    if args_dict['round']:
+        args_dict['round'] = map_time(args_dict['round'])
 
     if len(args_dict['date'])==1:
         args_dict['date'].append(args_dict['date'][0])
@@ -60,12 +66,21 @@ def run(args_dict):
     df = df[(df.date>=args_dict['date'][0]) & (df.date<=args_dict['date'][1])]
 
     vals = df.groupby(['date', 'project']).apply(lambda x: (x['end'] - x['start']).sum())
-    graph = (vals
-             .reset_index()
-             .pivot(index='date', columns='project', values=0)
-             .reset_index(level=0)
-             .fillna(0))
-    graph.date = graph.date.apply(lambda x: datetime.strftime(x, '%m/%d/%Y'))
+
+    if args_dict['round']:
+        vals[0] = round_time(vals, args_dict['round'])
+
+    if args_dict['analysis'] in ['all', 'graph']:
+        vals_graph = vals.copy()
+        if not args_dict['round']:
+            vals_graph[0] = round_time(vals_graph, 15)
+
+        graph = (vals_graph
+                 .reset_index()
+                 .pivot(index='date', columns='project', values=0)
+                 .reset_index(level=0)
+                 .fillna(0))
+        graph.date = graph.date.apply(lambda x: datetime.strftime(x, '%m/%d/%Y'))
 
     if args_dict['analysis']=='table':
         print vals
@@ -84,6 +99,8 @@ if __name__ == '__main__':
     parser.add_argument('-a', '--analysis', required=True, choices=['table', 'graph',
                         'all'], help='Enter how data should be analyzed - `table`, '
                         '`graph`, or `all`.')
+    parser.add_argument('-r', '--round', required=False, type=int, choices=[5, 10, 15, 30],
+                        help='Optional; rounds times to specified minute interval.')
     parser.add_argument('--host', required=False, help='Database host; will default to '
                         'config settings.')
     parser.add_argument('--db', required=False, help='Database name; will default to '
