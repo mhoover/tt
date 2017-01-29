@@ -3,8 +3,8 @@
 `tt` (time-track) is a mysql-based program to keep track of time (for consultants, etc.) using Python commmands. It is a general -- and very simple -- time tracking program. A database has the following values:
 
 * `date`: Should entered as 'mm/dd/yyyy' (as a string).
-* `start`: The time one starts working; recorded as a decimal/time combination. So, `8.25` would represent 8:15am and `17.75` would represent 5:45pm.
-* `end`: The time one ends working; recorded as a decimal/time combination (see above).
+* `start`: The time one starts working; recorded as HH:MM. So, `8:15` would represent 8:15am and `17:45` would represent 5:45pm.
+* `end`: The time one ends working; recorded as HH:MM (see above).
 * `project`: A string (up to 8 characters long) for identify the project to charge against.
 
 ### Configuration file
@@ -12,10 +12,16 @@ There is a configuration file that is expected as a well called `config.cfg` (se
 
 ## Use
 ### Initializing the time-tracking database
-To set up a time-tracking database, one must have mysql (currently 5.7.17) installed locally on their machine. Then, using the `create.py` script, set up the database with a database name and table. A user can add additional tables into the same named database. Each time a table is initialized, a test entry is created. Usage is as follows:
+To set up a time-tracking database, one must have mysql (currently 5.7.17) or sqlite3 installed locally on their machine. Then, using the `create.py` script, set up the database with a database name and table. A user can add additional tables into the same named database. Each time a table is initialized, a test entry is created. Usage is as follows:
 
+For mysql:
 ```
-$ python create.py -d my-time-db -t my-time-table
+$ python create.py -d my-time-db -t my-time-table -e mysql
+```
+
+For sqlite:
+```
+$ python create.py -d my-time-db -t my-time-table -e sqlite
 ```
 
 ### Adding entries
@@ -26,13 +32,13 @@ To open an entry:
 $ python add.py -t 9 -d '01/01/2017' -p gen
 ```
 
-Where the `-t` or `--time` entry expects an integer or float. Based on how the math is calculated, these entries should be something like `9` (for 9am), `9.25` (for 9:15am), `9.5` (for 9:30am), or `9.75` (for 9:45am). One can enter other values, but the calculations for time worked will likely be off. Note, the system expects a 24-hour clock, so 1:30pm would be entered as `13.5`.
+Where the `-t` or `--time` entry expects an integer or float. These entries should be something like `9` (for 9am), `9:15` (for 9:15am), `9:32` (for 9:32am), or `9:45` (for 9:45am). Note, the system expects a 24-hour clock, so 1:30pm would be entered as `13:30`.
 
 The `-d` or `--date` entry expects a string date of the format `mm/dd/yyyy`. The `-p` or `--project` entry expects a string of no more than eight (8) characters. This is short-hand for the project that is being billed.
 
 To close an entry:
 ```
-$ python add.py -t 10.5 --close_entry
+$ python add.py -t 10:30 --close_entry
 ```
 
 The `-t` or `--time` entry is as described above. The `-c` or `--close_entry` is a flag for the fact that the last entry should be closed, closing it with the time indicated in the command.
@@ -52,10 +58,9 @@ $ python analyze.py -d 01/01/2017 -a table
 This command will summarize all time by project for 01 January 2017. It would look something like:
 ```
 date        project
-2017-01-01  proj1       1.00
-            proj2       2.75
-            gen         4.25
-dtype: float64
+2017-01-01  proj1       01:00
+            proj2       02:45
+            gen         04:15
 ```
 
 To analyze time in table form for a range of days:
@@ -66,16 +71,15 @@ $ python analyze.py -d 01/01/2017 01/03/2017 -a table
 It would look something like:
 ```
 date        project
-2017-01-01  proj1       1.00
-            proj2       2.75
-            gen         4.25
-2017-01-02  proj2       3.50
-            proj3       2.75
-            gen         3.00
-2017-01-03  proj1       3.00
-            proj2       4.25
-            proj3       0.50
-dtype: float64
+2017-01-01  proj1       01:00
+            proj2       02:45
+            gen         04:15
+2017-01-02  proj2       03:30
+            proj3       02:45
+            gen         03:00
+2017-01-03  proj1       03:00
+            proj2       04:15
+            proj3       00:30
 ```
 
 To analyze time in graphical form:
@@ -88,7 +92,7 @@ This will product an ASCII plot in the terminal over the range of days specified
 Finally, `python analyze.py -d 01/01/2017 01/03/2017 -a all` will produce both tabular and graphical output.
 
 ## Dependencies
-This program requires a number of dependencies. First, `mysql` and `gnuplot` are external dependencies that are needed for proper functioning. Second, within Python, `pymysql` and `pandas` are dependencies.
+This program requires a number of dependencies. First, `mysql` (or `sqlite3`) and `gnuplot` are external dependencies that are needed for proper functioning. Second, within Python, `pymysql` (or `sqlite3`) and `pandas` are dependencies.
 
 ## Conclusion
 This is a basic, but functional, time tracking program. Feel free to submit PRs if you have features to add. If there are questions, contact Matt Hoover at matthew.a.hoover at gmail.com.
