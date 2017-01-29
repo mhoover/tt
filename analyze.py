@@ -13,6 +13,11 @@ from datetime import datetime
 from tt import *
 
 
+def convert_str_time(arr):
+    tmp = arr.apply(lambda x: x.split(':'))
+    return [np.timedelta64(int(x[0])*60 + int(x[1]), 'm') for x in tmp]
+
+
 def write_plot(d, nbr):
     for i in xrange(1, nbr):
         if i==1:
@@ -64,6 +69,9 @@ def run(args_dict):
     df.date = df.date.apply(lambda x: datetime.strptime(x, '%m/%d/%Y'))
 
     df = df[(df.date>=args_dict['date'][0]) & (df.date<=args_dict['date'][1])]
+    if args_dict['dbengine'] == 'sqlite':
+        df.start = convert_str_time(df.start)
+        df.end = convert_str_time(df.end)
 
     vals = df.groupby(['date', 'project']).apply(lambda x: (x['end'] - x['start']).sum())
 
