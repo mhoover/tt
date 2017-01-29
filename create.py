@@ -12,22 +12,21 @@ warnings.filterwarnings('ignore')
 
 def create_table_command_mysql():
     sql_commands = [('''
-    use {db};'.format(args_dict['db']);
-    create table if not exists {table} (
-        id int not null auto_increment,
-        date varchar(10),
-        start time(0),
-        end time(0),
-        project varchar(8),
-        primary key (id)
-    );
-    ;
+        create database if not exists {db};
+        use {db};
+        create table if not exists {table} (
+            id int not null auto_increment,
+            date varchar(10),
+            start time(0),
+            end time(0),
+            project varchar(8),
+            primary key (id)
+        );
     '''.format(db=args_dict['db'], table=args_dict['table']))]
 
-    sql_commands += ['create database if not exists {}'.format(args_dict['db'])]
     return sql_commands
 
-def create_table_command_sqllite():
+def create_table_command_sqlite():
     sql_commands = [('''
     create table if not exists {table} (
         id integer primary key autoincrement,
@@ -44,26 +43,27 @@ def run(args_dict):
     args_dict = update_args(args_dict)
 
     if args_dict['dbengine'] == 'mysql':
-        db = mdb.connect(host='{}'.format(args_dict['host']),
-                         user='{}'.format(USERNAME),
-                         password='{}'.format(PASSWORD),
-                         autocommit=True)
+        db = mdb.connect(
+            host='{}'.format(args_dict['host']),
+            user='{}'.format(USERNAME),
+            password='{}'.format(PASSWORD),
+            autocommit=True
+        )
         sql_commands = create_table_command_mysql()
     elif args_dict['dbengine'] == 'sqlite':
         db = sqlite3.connect('{}.db'.format(args_dict['db']), isolation_level=None)
-        sql_commands = create_table_command_sqllite()
+        sql_commands = create_table_command_sqlite()
     else:
         raise ValueError, 'dbengine: {} not known'.format(args_dict['dbengine'])
 
-    sql_commands.append(('''insert into {table} '''
-                         '''(date, start, end, project) '''
-                         '''values ('01/01/2016', 0, 1, 'test');'''
-                         ''''''.format(table=args_dict['table'])))
+    sql_commands.append(('''
+        insert into {table} (date, start, end, project)
+            values ('01/01/2016', '0:00', '1:00', 'test');
+    '''.format(table=args_dict['table'])))
 
     for sql in sql_commands:
         db.cursor().execute(sql)
     db.cursor().close()
-    db.close()
 
 
 if __name__ == '__main__':
@@ -75,8 +75,7 @@ if __name__ == '__main__':
     parser.add_argument('--host', required=False, help='Database host; will default to '
                         'config settings.')
     parser.add_argument('-e', '--dbengine', required=False, choices=['mysql', 'sqlite'],
-                        help='Database engine; will default to '
-                        'config settings.')
+                        help='Database engine; will default to config settings.')
     args_dict = vars(parser.parse_args())
 
     run(args_dict)
