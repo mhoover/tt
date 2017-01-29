@@ -1,2 +1,4 @@
 config.cfg
 *.pyc
+*.db
+.idea/

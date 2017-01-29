@@ -2,6 +2,7 @@ import argparse
 import sys
 
 import pymysql as mdb
+import sqlite3
 
 from tt import *
 
@@ -9,14 +10,18 @@ from tt import *
 def run(args_dict):
     args_dict = update_args(args_dict)
 
-    db = mdb.connect(user='{}'.format(USERNAME), host=args_dict['host'],
-                     password='{}'.format(PASSWORD), db=args_dict['db'],
-                     charset='utf8', autocommit=True)
+    if args_dict['dbengine'] == 'mysql':
+        db = mdb.connect(user='{}'.format(USERNAME), host=args_dict['host'],
+                         password='{}'.format(PASSWORD), db=args_dict['db'],
+                         charset='utf8', autocommit=True)
+    elif args_dict['dbengine'] == 'sqlite':
+        db = sqlite3.connect('{}.db'.format(args_dict['db']), isolation_level=None)
+    else:
+        sys.exit(DB_ERROR_MESSAGE)
 
     if args_dict['close_entry']:
         sql = ('''
-            select @last_row := max(id) from {table};
-            update {table} set end={time} where id=@last_row;
+            update {table} set end="{time}" where id=(select max(id) from {table});
         '''.format(table=args_dict['table'], time=args_dict['time']))
         db.cursor().execute(sql)
     else:
@@ -32,12 +37,12 @@ def run(args_dict):
                      'open entry. Please close this entry first:\n\n'
                      'Project: {}, Date: {}, Start: {}'.format(end_val[0][4],
                                                                end_val[0][1],
-                                                               float(end_val[0][2])))
+                                                               end_val[0][2]))
         if args_dict['date'] and args_dict['project']:
-            db.cursor().execute('insert into {0} (date, start, project) '
-                                'values (%s, %s, %s);'.format(args_dict['table']),
-                                (args_dict['date'], args_dict['time'],
-                                 args_dict['project']))
+            db.cursor().execute('insert into {table} (date, start, project) '
+                                'values ("{date}", "{time}", "{proj}");'.format(
+                                table=args_dict['table'], date=args_dict['date'],
+                                time=args_dict['time'], proj=args_dict['project']))
         else:
             sys.exit('You\'re trying to start a new entry; you must include a date '
                      'and a project.')
@@ -48,11 +53,11 @@ def run(args_dict):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Add entry to timesheet')
-    parser.add_argument('-t', '--time', required=True, type=float, help='Enter time as '
-                        'decimal/time combination. So, `8.25` represents 8:15am')
-    parser.add_argument('-d', '--date', required=False, type=str, help='Enter date of '
+    parser.add_argument('-t', '--time', required=True, help='Enter time as '
+                        'HH:MM using the 24-hour clock.')
+    parser.add_argument('-d', '--date', required=False, help='Enter date of '
                         'entry as a string in the form, `mm/dd/yyy`')
-    parser.add_argument('-p', '--project', required=False, type=str, help='Enter client '
+    parser.add_argument('-p', '--project', required=False, help='Enter client '
                         'code to which work is to be billed.')
     parser.add_argument('-c', '--close_entry', action='store_true', help='Flag to '
                         'determine if entry should be `start` or `end` for the entry; '
