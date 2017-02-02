@@ -13,7 +13,6 @@ warnings.filterwarnings('ignore')
 def create_projects(args_dict):
     if args_dict['dbengine']=='mysql':
         sql_commands = [('''
-            create database if not exists {db};
             use {db};
             create table if not exists {table} (
                 id int not null auto_increment,
@@ -27,9 +26,9 @@ def create_projects(args_dict):
         sql_commands = [('''
             create table if not exists {table} (
                 id integer primary key autoincrement,
-                projectName varchar(128),
-                projectCode varchar(8),
-                projectBillCode varchar(10)
+                project_name varchar(128),
+                project_code varchar(8),
+                project_bill_code varchar(10)
             );
         '''.format(table=args_dict['table']))]
     else:
@@ -54,9 +53,11 @@ def run(args_dict):
         sys.exit(DB_ERROR_MESSAGE)
 
     sql_commands = create_projects(args_dict)
+    if args_dict['dbengine'] == 'mysql':
+        sql_commands.insert(0, 'create database if not exists {};'.format(args_dict['db']))
 
     sql_commands.append(('''
-        insert into {table} (projectName, projectCode, projectBillCode)
+        insert into {table} (project_name, project_code, project_bill_code)
             values ('MyFirstProject', 'proj1', '111111');
     '''.format(table=args_dict['table'])))
 

@@ -12,7 +12,6 @@ warnings.filterwarnings('ignore')
 
 def create_table_command_mysql():
     sql_commands = [('''
-        create database if not exists {db};
         use {db};
         create table if not exists {table} (
             id int not null auto_increment,
@@ -55,6 +54,9 @@ def run(args_dict):
         sql_commands = create_table_command_sqlite()
     else:
         raise ValueError, 'dbengine: {} not known'.format(args_dict['dbengine'])
+
+    if args_dict['dbengine'] == 'mysql':
+        sql_commands.insert(0, 'create database if not exists {};'.format(args_dict['db']))
 
     sql_commands.append(('''
         insert into {table} (date, start, end, project)
