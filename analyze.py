@@ -43,8 +43,8 @@ def make_graph(d):
     gp.stdin.flush()
 
 
-def round_time(df, rd):
-    return [round(x/np.timedelta64(1, 'h') * rd) / rd for x in df[0]]
+def round_time(vec, rd):
+    return [round(x/np.timedelta64(1, 'h') * rd) / rd for x in vec]
 
 
 def run(args_dict):
@@ -73,19 +73,24 @@ def run(args_dict):
         df.start = convert_str_time(df.start)
         df.end = convert_str_time(df.end)
 
-    vals = df.groupby(['date', 'project']).apply(lambda x: (x['end'] - x['start']).sum())
+    vals = (df
+            .groupby(['date', 'project'])
+            .apply(lambda x: (x['end'] - x['start']).sum())
+            .reset_index())
 
     if args_dict['round']:
-        vals[0] = round_time(vals, args_dict['round'])
+        vals[0] = round_time(vals[0], args_dict['round'])
+    vals.rename(columns={0: 'time_billed'}, inplace=True)
+    vals = vals.set_index(['date', 'project'])
 
     if args_dict['analysis'] in ['all', 'graph']:
         vals_graph = vals.copy()
+        vals_graph = vals_graph.reset_index()
         if not args_dict['round']:
-            vals_graph[0] = round_time(vals_graph, 15)
+            vals_graph['time_billed'] = round_time(vals_graph['time_billed'], 15)
 
         graph = (vals_graph
-                 .reset_index()
-                 .pivot(index='date', columns='project', values=0)
+                 .pivot(index='date', columns='project', values='time_billed')
                  .reset_index(level=0)
                  .fillna(0))
         graph.date = graph.date.apply(lambda x: datetime.strftime(x, '%m/%d/%Y'))
