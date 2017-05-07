@@ -12,7 +12,7 @@ import pymysql as mdb
 from datetime import datetime
 
 from tt import *
-import pdb; pdb.set_trace()
+
 
 def convert_str_time(arr):
     tmp = arr.apply(lambda x: x.split(':'))
