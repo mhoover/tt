@@ -101,7 +101,7 @@ This program requires a number of dependencies. First, `mysql` (or `sqlite3`) an
 It may be cumbersome to type out the path name to `add` and `analyze` time data, so one option is symlinking those files for use across your system. This can be accomplished by:
 
 1. Symbolically linking the file: `ln -s add.py /usr/local/bin/add`
-2. Making it executable `chmod +x /usr/local/bin/add`
+2. Making it executable: `chmod +x /usr/local/bin/add`
 
 This should allow the following command, for example, from any directory:
 
