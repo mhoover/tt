@@ -39,6 +39,21 @@ def table_check(args_dict, db, exists=True):
                      .format(args_dict['proj_table']))
 
 
+def entry_check(args_dict, db):
+    check_entry = db.cursor()
+    check_entry.execute('''
+        select exists(select * from {} where (
+            project_code="{}" or project_bill_nbr="{}"));
+    '''.format(args_dict['proj_table'], args_dict['add'][1], args_dict['add'][2]))
+    if check_entry.fetchone()[0] == 0:
+        check_entry.close()
+        pass
+    else:
+        sys.exit('STOP! The entry `project_code`: {} and/or '
+                 '`project_bill_nbr`: {} already exist.'
+                 .format(args_dict['add'][1], args_dict['add'][2]))
+
+
 def create_projects(args_dict, db):
     table_check(args_dict, db, exists=False)
     if args_dict['dbengine']=='mysql':
@@ -77,6 +92,7 @@ def create_projects(args_dict, db):
 
 def add_projects(args_dict, db):
     table_check(args_dict, db)
+    entry_check(args_dict, db)
     sql_commands = [('''
         insert into {table} (project_description, project_code, project_bill_nbr)
             values ("{desc}", "{code}", "{nbr}");
