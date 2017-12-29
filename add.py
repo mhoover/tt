@@ -22,17 +22,24 @@ def run(args_dict):
 
     if args_dict['close_entry']:
         if args_dict['dbengine'] == 'mysql':
-            sql = ('''
-                select @last_row := max(id) from {table};
-                update {table} set end="{time}" where id=@last_row;
-            '''.format(table=args_dict['table'], time=args_dict['time']))
+            sql = [
+                '''
+                    select @last_row := max(id) from {table};
+                '''.format(table=args_dict['table']),
+                '''
+                    update {table} set end="{time}" where id=@last_row;
+                '''.format(table=args_dict['table'], time=args_dict['time']),
+            ]
         elif args_dict['dbengine'] == 'sqlite':
-            sql = ('''
-                update {table} set end="{time}" where id=(select max(id) from {table});
-            '''.format(table=args_dict['table'], time=args_dict['time']))
+            sql = [
+                '''
+                    update {table} set end="{time}" where id=(select max(id) from {table});
+                '''.format(table=args_dict['table'], time=args_dict['time'])
+            ]
         else:
             sys.exit(DB_ERROR_MESSAGE)
-        db.cursor().execute(sql)
+        for statement in sql:
+            db.cursor().execute(statement)
     else:
         cur = db.cursor()
         sql = ('''
