@@ -11,18 +11,24 @@ warnings.filterwarnings('ignore')
 
 
 def create_table_command_mysql():
-    sql_commands = [('''
-        create database if not exists {db};
-        use {db};
-        create table if not exists {table} (
-            id int not null auto_increment,
-            date varchar(10),
-            start time(0),
-            end time(0),
-            project varchar(8),
-            primary key (id)
-        );
-    '''.format(db=args_dict['db'], table=args_dict['table']))]
+    sql_commands = [
+        '''
+            create database if not exists {db};
+        '''.format(db=args_dict['db']),
+        '''
+            use {db};
+        '''.format(db=args_dict['db']),
+        '''
+            create table if not exists {table} (
+                id int not null auto_increment,
+                date varchar(10),
+                start time(0),
+                end time(0),
+                project varchar(8),
+                primary key (id)
+            );
+        '''.format(db=args_dict['db'], table=args_dict['table']),
+    ]
 
     return sql_commands
 
